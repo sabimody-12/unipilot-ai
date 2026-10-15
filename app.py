@@ -197,13 +197,11 @@ if prompt := st.chat_input("Ask UniPilot AI anything..."):
                 answer = response.choices[0].message.content
                 st.markdown(answer)
 
-            except Exception:
-                answer = (
-                    "I couldn't connect to the AI service. "
-                    "Please check your API key and billing "
-                    "or usage limits in the provider account."
-                )
-                st.error(answer)
+            
+                except Exception as e:
+                    st.error(f"Gemini error: {e}")
+                    answer = "Sorry, I couldn't get an AI response. Please try again."
+
         else:
             answer = get_demo_answer(prompt)
             st.markdown(answer)
