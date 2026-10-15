@@ -716,4 +716,9 @@ elif st.session_state.page == "Study Tools":
         )
         if st.button("Explain a concept", use_container_width=True):
             open_chat_with(
-                "Explain a computer science concept in si
+                "Explain a computer science concept in simple "
+                "language and give me an example."
+            )
+
+
+        
