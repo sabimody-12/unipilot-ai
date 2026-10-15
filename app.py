@@ -41,20 +41,24 @@ if uploaded_file is not None:
 
             st.subheader("Document Preview")
             st.text(result["preview"])
-
             st.info(result["ai_analysis"])
         else:
             st.warning(result)
 
     except UnicodeDecodeError:
         st.error("Please upload a UTF-8 encoded text file.")
+    except Exception as e:
+        st.error(f"Document analysis error: {e}")
 
-# Optional AI connection
-api_key = st.secrets.get(
-    "GEMINI_API_KEY",
-    os.getenv("GEMINI_API_KEY", "")
-)
+# Get Gemini API key from Streamlit Secrets or environment
+api_key = os.getenv("GEMINI_API_KEY", "")
 
+try:
+    api_key = st.secrets.get("GEMINI_API_KEY", api_key)
+except Exception:
+    pass
+
+# Initialise chat history
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {
@@ -73,36 +77,37 @@ st.markdown("### What do you want to do?")
 col1, col2 = st.columns(2)
 
 if col1.button("💻 Learn programming", use_container_width=True):
-    st.session_state.messages.append({
-        "role": "user",
-        "content": "Help me start learning programming."
-    })
+    st.session_state.pending_prompt = (
+        "Help me start learning programming."
+    )
+    st.rerun()
 
 if col2.button("📚 Study help", use_container_width=True):
-    st.session_state.messages.append({
-        "role": "user",
-        "content": "Help me create a study plan."
-    })
+    st.session_state.pending_prompt = (
+        "Help me create a study plan."
+    )
+    st.rerun()
 
 if col1.button("📝 Assignment help", use_container_width=True):
-    st.session_state.messages.append({
-        "role": "user",
-        "content": "Help me understand and plan an assignment."
-    })
+    st.session_state.pending_prompt = (
+        "Help me understand and plan an assignment."
+    )
+    st.rerun()
 
 if col2.button("🎯 Career guidance", use_container_width=True):
-    st.session_state.messages.append({
-        "role": "user",
-        "content": "Suggest a career path in information technology."
-    })
+    st.session_state.pending_prompt = (
+        "Suggest a career path in information technology."
+    )
+    st.rerun()
 
 st.divider()
 st.markdown("### Chat with UniPilot")
 
-# Display chat history
+# Display previous chat messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
+
 
 def get_demo_answer(question):
     q = question.lower()
@@ -142,19 +147,22 @@ def get_demo_answer(question):
         )
 
     return (
-        "Thanks for your question! I'm currently running "
-        "in starter mode. Add an AI API key in Streamlit "
-        "Secrets to enable AI-generated answers.\n\n"
-        "You can still explore the UniPilot interface "
-        "and its study shortcuts."
+        "I'm currently running in starter mode because the "
+        "Gemini API key is not configured. Please check your "
+        "Streamlit Secrets settings to enable AI-generated answers."
     )
 
-# Chat input
-if prompt := st.chat_input("Ask UniPilot AI anything..."):
-    st.session_state.messages.append({
-        "role": "user",
-        "content": prompt
-    })
+
+# Handle typed messages and shortcut prompts
+prompt = st.chat_input("Ask UniPilot AI anything...")
+
+if not prompt and "pending_prompt" in st.session_state:
+    prompt = st.session_state.pop("pending_prompt")
+
+if prompt:
+    st.session_state.messages.append(
+        {"role": "user", "content": prompt}
+    )
 
     with st.chat_message("user"):
         st.markdown(prompt)
@@ -165,9 +173,12 @@ if prompt := st.chat_input("Ask UniPilot AI anything..."):
                 from openai import OpenAI
 
                 client = OpenAI(
-                api_key=api_key,
-                base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
-            )
+                    api_key=api_key,
+                    base_url=(
+                        "https://generativelanguage.googleapis.com/"
+                        "v1beta/openai/"
+                    )
+                )
 
                 response = client.chat.completions.create(
                     model="gemini-3.8-flash",
@@ -185,31 +196,39 @@ if prompt := st.chat_input("Ask UniPilot AI anything..."):
                         }
                     ] + [
                         {
-                            "role": m["role"],
-                            "content": m["content"]
+                            "role": message["role"],
+                            "content": message["content"]
                         }
-                        for m in st.session_state.messages
-                        if m["role"] in ("user", "assistant")
+                        for message in st.session_state.messages
+                        if message["role"] in ("user", "assistant")
                     ],
                     max_tokens=700
                 )
 
                 answer = response.choices[0].message.content
+
+                if not answer:
+                    answer = (
+                        "The AI returned an empty response. "
+                        "Please try asking again."
+                    )
+
                 st.markdown(answer)
 
-            
-                except Exception as e:
-                    st.error(f"Gemini error: {e}")
-                    answer = "Sorry, I couldn't get an AI response. Please try again."
+            except Exception as e:
+                st.error(f"Gemini API error: {e}")
+                answer = (
+                    "Sorry, I couldn't get an AI response. "
+                    "Please check the error above."
+                )
 
         else:
             answer = get_demo_answer(prompt)
             st.markdown(answer)
 
-    st.session_state.messages.append({
-        "role": "assistant",
-        "content": answer
-    })
+    st.session_state.messages.append(
+        {"role": "assistant", "content": answer}
+    )
 
 st.divider()
 st.caption("UniPilot AI • Early prototype • Built for learners")
