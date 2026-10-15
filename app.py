@@ -164,7 +164,7 @@ if prompt := st.chat_input("Ask UniPilot AI anything..."):
             try:
                 from openai import OpenAI
 
-                           client = OpenAI(
+                client = OpenAI(
                 api_key=api_key,
                 base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
             )
