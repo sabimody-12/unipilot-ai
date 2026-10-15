@@ -1,6 +1,7 @@
 
 import os
 import streamlit as st
+from ai import analyze_document
 
 st.set_page_config(
     page_title="UniPilot AI",
@@ -15,6 +16,38 @@ st.write(
     "Get help with studying, programming, assignments, "
     "university planning, and learning new skills."
 )
+
+st.divider()
+st.header("📄 Document Analyzer")
+
+uploaded_file = st.file_uploader(
+    "Upload a text document",
+    type=["txt"],
+    key="document_upload"
+)
+
+if uploaded_file is not None:
+    try:
+        document_text = uploaded_file.getvalue().decode("utf-8")
+        result = analyze_document(document_text)
+
+        if isinstance(result, dict):
+            st.success(result["message"])
+
+            col_a, col_b, col_c = st.columns(3)
+            col_a.metric("Characters", result["characters"])
+            col_b.metric("Words", result["words"])
+            col_c.metric("Sentences", result["sentences"])
+
+            st.subheader("Document Preview")
+            st.text(result["preview"])
+
+            st.info(result["ai_analysis"])
+        else:
+            st.warning(result)
+
+    except UnicodeDecodeError:
+        st.error("Please upload a UTF-8 encoded text file.")
 
 # Optional AI connection
 api_key = st.secrets.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY", ""))
