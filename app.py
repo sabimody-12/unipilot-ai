@@ -181,7 +181,7 @@ if prompt:
                 )
 
                 response = client.chat.completions.create(
-                    model="gemini-3.8-flash",
+                    model="gemini-3.5-flash-lite",
                     messages=[
                         {
                             "role": "system",
