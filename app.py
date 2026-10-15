@@ -308,7 +308,7 @@ def get_ai_answer(question):
         }
 
         # Send recent conversation context to the model.
-        recent_messages = st.session_state.messages[-12:]
+        recent_messages = st.session_state.messages[-13:-1]
 
         conversation = [
             system_message,
