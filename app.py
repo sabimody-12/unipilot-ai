@@ -50,7 +50,10 @@ if uploaded_file is not None:
         st.error("Please upload a UTF-8 encoded text file.")
 
 # Optional AI connection
-api_key = st.secrets.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY", ""))
+api_key = st.secrets.get(
+    "GEMINI_API_KEY",
+    os.getenv("GEMINI_API_KEY", "")
+)
 
 if "messages" not in st.session_state:
     st.session_state.messages = [
@@ -161,10 +164,12 @@ if prompt := st.chat_input("Ask UniPilot AI anything..."):
             try:
                 from openai import OpenAI
 
-                client = OpenAI(api_key=api_key)
+               client = OpenAI(api_key=api_key,
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+)
 
                 response = client.chat.completions.create(
-                    model="gpt-4o-mini",
+                    model="gemini-3.8-flash",
                     messages=[
                         {
                             "role": "system",
